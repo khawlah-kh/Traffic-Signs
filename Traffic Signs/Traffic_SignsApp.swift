@@ -11,7 +11,8 @@ import SwiftUI
 struct Traffic_SignsApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            CameraFullView()
+            //ContentView()
         }
     }
 }
