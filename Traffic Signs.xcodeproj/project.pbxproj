@@ -8,20 +8,24 @@
 
 /* Begin PBXBuildFile section */
 		DF1323CA2C7D9B2C00418E37 /* ObjectDetector.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = DF1323C92C7D9B2C00418E37 /* ObjectDetector.mlmodel */; };
+		DF2996852C917F6600C5B835 /* Traffic_Signs_v2.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = DF2996842C917F6600C5B835 /* Traffic_Signs_v2.mlmodel */; };
+		DF3DC2462C7EF7470077AFD5 /* TrafficSignManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF3DC2452C7EF7470077AFD5 /* TrafficSignManager.swift */; };
 		DF8A1E182C5FBAA300EE48BD /* Traffic_SignsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF8A1E172C5FBAA300EE48BD /* Traffic_SignsApp.swift */; };
 		DF8A1E1A2C5FBAA300EE48BD /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF8A1E192C5FBAA300EE48BD /* ContentView.swift */; };
 		DF8A1E1C2C5FBAA400EE48BD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DF8A1E1B2C5FBAA400EE48BD /* Assets.xcassets */; };
 		DF8A1E1F2C5FBAA400EE48BD /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DF8A1E1E2C5FBAA400EE48BD /* Preview Assets.xcassets */; };
 		DF8A1E262C5FBC0200EE48BD /* labels.csv in Resources */ = {isa = PBXBuildFile; fileRef = DF8A1E252C5FBC0200EE48BD /* labels.csv */; };
 		DF8A1E282C5FBC8700EE48BD /* Traffic_Signs.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = DF8A1E272C5FBC8700EE48BD /* Traffic_Signs.mlmodel */; };
+		DF9870272C88391000AC7B82 /* MobileNetV2.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = DF9870262C88391000AC7B82 /* MobileNetV2.mlmodel */; };
 		DFAAF6692C6DDA2900807F54 /* CustomCameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFAAF6682C6DDA2900807F54 /* CustomCameraView.swift */; };
 		DFAAF66C2C6DDA3400807F54 /* CameraFullView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFAAF66A2C6DDA3400807F54 /* CameraFullView.swift */; };
 		DFCC235E2C610E8E009B88B8 /* Utalities.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFCC235D2C610E8E009B88B8 /* Utalities.swift */; };
-		DFD0F0C42C7D944A007A5855 /* SignPredictor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFD0F0C32C7D944A007A5855 /* SignPredictor.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		DF1323C92C7D9B2C00418E37 /* ObjectDetector.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = ObjectDetector.mlmodel; sourceTree = "<group>"; };
+		DF2996842C917F6600C5B835 /* Traffic_Signs_v2.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = Traffic_Signs_v2.mlmodel; sourceTree = "<group>"; };
+		DF3DC2452C7EF7470077AFD5 /* TrafficSignManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficSignManager.swift; sourceTree = "<group>"; };
 		DF8A1E142C5FBAA300EE48BD /* Traffic Signs.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Traffic Signs.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DF8A1E172C5FBAA300EE48BD /* Traffic_SignsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Traffic_SignsApp.swift; sourceTree = "<group>"; };
 		DF8A1E192C5FBAA300EE48BD /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -29,10 +33,10 @@
 		DF8A1E1E2C5FBAA400EE48BD /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		DF8A1E252C5FBC0200EE48BD /* labels.csv */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = labels.csv; sourceTree = "<group>"; };
 		DF8A1E272C5FBC8700EE48BD /* Traffic_Signs.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = Traffic_Signs.mlmodel; sourceTree = "<group>"; };
+		DF9870262C88391000AC7B82 /* MobileNetV2.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = MobileNetV2.mlmodel; sourceTree = "<group>"; };
 		DFAAF6682C6DDA2900807F54 /* CustomCameraView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CustomCameraView.swift; sourceTree = "<group>"; };
 		DFAAF66A2C6DDA3400807F54 /* CameraFullView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CameraFullView.swift; sourceTree = "<group>"; };
 		DFCC235D2C610E8E009B88B8 /* Utalities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utalities.swift; sourceTree = "<group>"; };
-		DFD0F0C32C7D944A007A5855 /* SignPredictor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignPredictor.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -46,6 +50,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		DF3DC2442C7EF7290077AFD5 /* ViewModel */ = {
+			isa = PBXGroup;
+			children = (
+				DF3DC2452C7EF7470077AFD5 /* TrafficSignManager.swift */,
+			);
+			path = ViewModel;
+			sourceTree = "<group>";
+		};
 		DF8A1E0B2C5FBAA300EE48BD = {
 			isa = PBXGroup;
 			children = (
@@ -65,12 +77,15 @@
 		DF8A1E162C5FBAA300EE48BD /* Traffic Signs */ = {
 			isa = PBXGroup;
 			children = (
+				DF3DC2442C7EF7290077AFD5 /* ViewModel */,
 				DFD0F0C22C7D9430007A5855 /* ML */,
 				DFAAF6672C6DDA1D00807F54 /* Camera */,
 				DF8A1E172C5FBAA300EE48BD /* Traffic_SignsApp.swift */,
 				DF8A1E192C5FBAA300EE48BD /* ContentView.swift */,
 				DF8A1E1B2C5FBAA400EE48BD /* Assets.xcassets */,
 				DF1323C92C7D9B2C00418E37 /* ObjectDetector.mlmodel */,
+				DF2996842C917F6600C5B835 /* Traffic_Signs_v2.mlmodel */,
+				DF9870262C88391000AC7B82 /* MobileNetV2.mlmodel */,
 				DF8A1E272C5FBC8700EE48BD /* Traffic_Signs.mlmodel */,
 				DF8A1E252C5FBC0200EE48BD /* labels.csv */,
 				DF8A1E1D2C5FBAA400EE48BD /* Preview Content */,
@@ -99,7 +114,6 @@
 		DFD0F0C22C7D9430007A5855 /* ML */ = {
 			isa = PBXGroup;
 			children = (
-				DFD0F0C32C7D944A007A5855 /* SignPredictor.swift */,
 			);
 			path = ML;
 			sourceTree = "<group>";
@@ -175,10 +189,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DF9870272C88391000AC7B82 /* MobileNetV2.mlmodel in Sources */,
 				DFAAF66C2C6DDA3400807F54 /* CameraFullView.swift in Sources */,
 				DF8A1E1A2C5FBAA300EE48BD /* ContentView.swift in Sources */,
-				DFD0F0C42C7D944A007A5855 /* SignPredictor.swift in Sources */,
+				DF3DC2462C7EF7470077AFD5 /* TrafficSignManager.swift in Sources */,
 				DF8A1E182C5FBAA300EE48BD /* Traffic_SignsApp.swift in Sources */,
+				DF2996852C917F6600C5B835 /* Traffic_Signs_v2.mlmodel in Sources */,
 				DFAAF6692C6DDA2900807F54 /* CustomCameraView.swift in Sources */,
 				DFCC235E2C610E8E009B88B8 /* Utalities.swift in Sources */,
 				DF8A1E282C5FBC8700EE48BD /* Traffic_Signs.mlmodel in Sources */,

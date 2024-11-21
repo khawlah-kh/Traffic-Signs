@@ -22,11 +22,12 @@ struct CameraFullView: View {
                     VStack{
 
                         Spacer()
-
-                        if !cameraController.shouldCapture{
-                            Text("No sign has been detected")
+                            Text(cameraController.className.isEmpty ? "No sign has been detected" : cameraController.className )
                                 .foregroundStyle(Color.white)
-                        }
+//                        if !cameraController.shouldCapture{
+//                            Text("No sign has been detected")
+//                                .foregroundStyle(Color.white)
+//                        }
 
                     }
 
