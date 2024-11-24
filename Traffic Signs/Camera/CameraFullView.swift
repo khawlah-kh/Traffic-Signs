@@ -10,36 +10,26 @@ import Foundation
 import AVFoundation
 
 struct CameraFullView: View {
-    @EnvironmentObject var viewModel: ViewModel
-//    @State private var capturedPhoto: UIImage?
-//    @StateObject var trafficVM: TrafficSignDetector = .init(model: Traffic_Signs())
-
     @StateObject private var cameraController = CustomCameraController()
     var body: some View {
-                ZStack{
-                    CustomCameraView(cameraController: cameraController)
-                        .ignoresSafeArea()
-                    VStack{
-
-                        Spacer()
-                            Text(cameraController.className.isEmpty ? "No sign has been detected" : cameraController.className )
-                                .foregroundStyle(Color.white)
-//                        if !cameraController.shouldCapture{
-//                            Text("No sign has been detected")
-//                                .foregroundStyle(Color.white)
-//                        }
-
-                    }
-
-                }
+        ZStack{
+            CustomCameraView(cameraController: cameraController)
+                .ignoresSafeArea()
+            VStack{
+                
+                Spacer()
+                Spacer()
+                Text(cameraController.className.isEmpty ? "No sign has been detected" : cameraController.className )
+                    .foregroundStyle(Color.white)
+                Spacer()
+                
+            }
+            
+        }
     }
     
     
 }
 #Preview {
     CameraFullView()
-}
-
-extension UIImage: Identifiable{
-    
 }

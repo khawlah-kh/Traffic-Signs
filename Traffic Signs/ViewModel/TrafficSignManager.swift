@@ -10,7 +10,6 @@ import Foundation
 
 class TrafficSignManager{
     static var idNameDic:[String:String] = [:]
-    
 
     static func readCivFile(named fileName: String = "labels") -> [String: Any]? {
         guard let filepath = Bundle.main.path(forResource: fileName, ofType: "csv") else {

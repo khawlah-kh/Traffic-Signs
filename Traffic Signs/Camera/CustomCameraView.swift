@@ -21,6 +21,7 @@ struct CustomCameraView: UIViewControllerRepresentable {
         // No update necessary
     }
 }
+
 import Vision
 class CustomCameraController: UIViewController, ObservableObject,
                               AVCaptureMetadataOutputObjectsDelegate,AVCaptureVideoDataOutputSampleBufferDelegate{
@@ -52,42 +53,7 @@ class CustomCameraController: UIViewController, ObservableObject,
         fatalError("init(coder:) has not been implemented")
     }
     // For simple asset classification
-    let model: Traffic_Signs =  Traffic_Signs()
 
-    
-    //Not used
-    func detectAndClassifySign(from image: CIImage) -> String? {
-        guard let model = try? VNCoreMLModel(for: model.model) else {
-            return nil
-        }
-        
-        let request = VNCoreMLRequest(model: model) { request, error in
-            guard let results = request.results as? [VNCoreMLFeatureValueObservation],
-                  let topResult = results.first else {
-                return
-            }
-            
-            DispatchQueue.main.async {
-                let className = topResult.featureValue.stringValue ?? "Unknown"
-                print("Detected sign: \(className)")
-            }
-        }
-        
-        if let buffer = image.pixelBuffer{
-            let handler = VNImageRequestHandler(cvPixelBuffer: buffer)
-            
-            DispatchQueue.global(qos: .userInitiated).async {
-                do {
-                    try handler.perform([request])
-                } catch {
-                    print("Error: \(error)")
-                }
-            }
-        }
-            return nil
-        }
-    
-    
     //MARK: Setup
     private func requestCameraPermission() {
         AVCaptureDevice.requestAccess(for: .video) { granted in
@@ -98,7 +64,42 @@ class CustomCameraController: UIViewController, ObservableObject,
             }
         }
     }
+    // MARK: Performing Vision Requests
+    func setupVision() {
+        guard let modelURL = Bundle.main.url(forResource: "Traffic_Signs_v2", withExtension: "mlmodelc") else {  return }
+        
+        do {
+            let visionModel = try VNCoreMLModel(for: MLModel(contentsOf: modelURL))
+            let objectRecognition = VNCoreMLRequest(model: visionModel, completionHandler: { (request, error) in
+                DispatchQueue.main.async(execute: {
+                    // perform all the UI updates on the main queue
+                    if let results = request.results {
+                        self.detectClass(results)
+                    }
+                })
+            })
+            
+            self.requests = [objectRecognition]
+            
+        } catch let error as NSError {
+            print("Model loading went wrong: \(error)")
+        }
+    }
+
+    func detectClass(_ results: [Any]) {
+    guard let results = results as? [VNClassificationObservation] else {
+        return
+    }
     
+    if let firstResult = results.first {
+        self.className = firstResult.identifier
+        //self.className = TrafficSignManager.idNameDic[firstResult.identifier, default: "na"]
+        print("hi model \(firstResult.identifier) 🩵")
+        print("hi model \(firstResult.confidence)")
+    }
+        
+    
+}
     private func setupCamera() {
         //Create Session
         guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
@@ -154,6 +155,25 @@ class CustomCameraController: UIViewController, ObservableObject,
             
         }
     }
+    //When the frame get updated
+    public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        print("👋🏻")
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
+            return
+        }
+        
+        let exifOrientation = self.exifOrientationForCurrentDeviceOrientation()
+
+        let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: exifOrientation, options: [:])
+        do {
+            try imageRequestHandler.perform(self.requests)
+        } catch {
+            print(error)
+        }
+    }
+
+    
+    //MARK: 🤷🏻‍♀️
     
     func setupLayers() {
         detectionOverlay = CALayer()
@@ -289,60 +309,8 @@ class CustomCameraController: UIViewController, ObservableObject,
 }
 
     
-    // MARK: Performing Vision Requests
-    func setupVision() {
-//        guard let modelURL = Bundle.main.url(forResource: "MobileNetV2", withExtension: "mlmodelc") else {  return }
 
-        guard let modelURL = Bundle.main.url(forResource: "Traffic_Signs_v2", withExtension: "mlmodelc") else {  return }
-        
-        do {
-            let visionModel = try VNCoreMLModel(for: MLModel(contentsOf: modelURL))
-            let objectRecognition = VNCoreMLRequest(model: visionModel, completionHandler: { (request, error) in
-                DispatchQueue.main.async(execute: {
-                    // perform all the UI updates on the main queue
-                    if let results = request.results {
-                        self.detectClass(results)
-                    }
-                })
-            })
-            
-            self.requests = [objectRecognition]
-            
-        } catch let error as NSError {
-            print("Model loading went wrong: \(error)")
-        }
-    }
 
-    func detectClass(_ results: [Any]) {
-    guard let results = results as? [VNClassificationObservation] else {
-        return
-    }
-    
-    if let firstResult = results.first {
-        self.className = firstResult.identifier
-        //self.className = TrafficSignManager.idNameDic[firstResult.identifier, default: "na"]
-        print("hi model \(firstResult.identifier) 🩵")
-        print("hi model \(firstResult.confidence)")
-    }
-        
-    
-}
-
-    public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        print("👋🏻")
-        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
-            return
-        }
-        
-        let exifOrientation = self.exifOrientationForCurrentDeviceOrientation()
-
-        let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: exifOrientation, options: [:])
-        do {
-            try imageRequestHandler.perform(self.requests)
-        } catch {
-            print(error)
-        }
-    }
 
  }
 

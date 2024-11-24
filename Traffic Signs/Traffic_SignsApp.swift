@@ -16,7 +16,6 @@ struct Traffic_SignsApp: App {
                     TrafficSignManager.createIdNameDic()
                     
                 }
-//           ContentView()
         }
     }
 }
