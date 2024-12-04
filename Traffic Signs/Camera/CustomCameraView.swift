@@ -1,317 +1,255 @@
-//
-//  CustomCameraView.swift
-//  Hydro
-//
-//  Created by Khawlah Khalid on 16/07/2024.
+////
+////  CustomCameraView.swift
+////  Hydro
+////
+////  Created by Khawlah Khalid on 16/07/2024.
+////
 //
 
-import Foundation
-import UIKit
+
 import SwiftUI
+import UIKit
 import AVFoundation
+import Vision
 
-struct CustomCameraView: UIViewControllerRepresentable {
-    @ObservedObject var cameraController: CustomCameraController
-    
-    func makeUIViewController(context: Context) -> CustomCameraController {
-        cameraController
+// SwiftUI Wrapper
+struct CameraView: UIViewControllerRepresentable {
+    class Coordinator: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
+        var parent: CameraView
+        init(parent: CameraView) {
+            self.parent = parent
+        }
     }
     
-    func updateUIViewController(_ uiViewController: CustomCameraController, context: Context) {
-        // No update necessary
+    
+    func makeCoordinator() -> Coordinator {
+        return Coordinator(parent: self)
+    }
+    
+    func makeUIViewController(context: Context) -> UIViewController {
+        let viewController = VisionObjectRecognitionViewController()
+        viewController.startCaptureSession()
+        viewController.setupVision()
+
+        return viewController
+    }
+    
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        // Handle updates if needed
     }
 }
 
-import Vision
-class CustomCameraController: UIViewController, ObservableObject,
-                              AVCaptureMetadataOutputObjectsDelegate,AVCaptureVideoDataOutputSampleBufferDelegate{
-    
-    private var captureSession =  AVCaptureSession()
-    private var videoPreviewLayer: AVCaptureVideoPreviewLayer?
-    private var captureDevice: AVCaptureDevice?
-    //Face Detection
-    var captureDeviceResolution: CGSize = CGSize()
-    var videoDataOutput: AVCaptureVideoDataOutput?
-    var videoDataOutputQueue: DispatchQueue?
-    // Layer UI for drawing Vision results
-    var detectionOverlayLayer: CALayer?
-
-//All new
-    private var requests = [VNRequest]()
-    private var detectionOverlay: CALayer! = nil
+// Vision Object Recognition View Controller
+class VisionObjectRecognitionViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
     var bufferSize: CGSize = .zero
     var rootLayer: CALayer! = nil
-    @Published var className: String = ""
-
-    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
-        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
-        requestCameraPermission()
-        setupCamera()
+    
+    private let session = AVCaptureSession()
+    private var previewLayer: AVCaptureVideoPreviewLayer! = nil
+    private var videoDataOutput = AVCaptureVideoDataOutput()
+    private var videoDataOutputQueue = DispatchQueue(label: "VideoDataOutput", qos: .userInitiated)
+    //Vision
+    private var detectionOverlay: CALayer! = nil
+    private var requests = [VNRequest]()
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupAVCapture()
     }
     
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    // For simple asset classification
-
-    //MARK: Setup
-    private func requestCameraPermission() {
-        AVCaptureDevice.requestAccess(for: .video) { granted in
-            if granted {
-                DispatchQueue.main.async {
-                    self.setupCamera()
-                }
-            }
-        }
-    }
-    // MARK: Performing Vision Requests
-    func setupVision() {
-        guard let modelURL = Bundle.main.url(forResource: "Traffic_Signs_v2", withExtension: "mlmodelc") else {  return }
+    func setupAVCapture() {
+        var deviceInput: AVCaptureDeviceInput!
         
-        do {
-            let visionModel = try VNCoreMLModel(for: MLModel(contentsOf: modelURL))
-            let objectRecognition = VNCoreMLRequest(model: visionModel, completionHandler: { (request, error) in
-                DispatchQueue.main.async(execute: {
-                    // perform all the UI updates on the main queue
-                    if let results = request.results {
-                        self.detectClass(results)
-                    }
-                })
-            })
-            
-            self.requests = [objectRecognition]
-            
-        } catch let error as NSError {
-            print("Model loading went wrong: \(error)")
-        }
-    }
-
-    func detectClass(_ results: [Any]) {
-    guard let results = results as? [VNClassificationObservation] else {
-        return
-    }
-    
-    if let firstResult = results.first {
-        self.className = firstResult.identifier
-        //self.className = TrafficSignManager.idNameDic[firstResult.identifier, default: "na"]
-        print("hi model \(firstResult.identifier) 🩵")
-        print("hi model \(firstResult.confidence)")
-    }
-        
-    
-}
-    private func setupCamera() {
-        //Create Session
-        guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
+        // Select a video device
+        guard let videoDevice = AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInWideAngleCamera], mediaType: .video, position: .back).devices.first
+        else {
             return
         }
-        captureDevice = device
         do {
-            let input = try AVCaptureDeviceInput(device: device)
-            captureSession = AVCaptureSession()
-            captureSession.addInput(input)
-            videoPreviewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
-            videoPreviewLayer?.frame = view.bounds
-            //Video output data
-            let videoDataOutput = AVCaptureVideoDataOutput()
-            videoDataOutput.alwaysDiscardsLateVideoFrames = true
-            let videoDataOutputQueue = DispatchQueue(label: "com.example.apple-samplecode.VisionFaceTrack")
-            videoDataOutput.setSampleBufferDelegate(self, queue: videoDataOutputQueue)
-            if captureSession.canAddOutput(videoDataOutput) {
-                captureSession.addOutput(videoDataOutput)
-            }
-            videoDataOutput.connection(with: .video)?.isEnabled = true
-            if let captureConnection = videoDataOutput.connection(with: AVMediaType.video) {
-                if captureConnection.isCameraIntrinsicMatrixDeliverySupported {
-                    captureConnection.isCameraIntrinsicMatrixDeliveryEnabled = true
-                }
-            }
-            self.videoDataOutput = videoDataOutput
-            self.videoDataOutputQueue = videoDataOutputQueue
-            
-            self.captureDevice = device
-            if let highestResolution = self.highestResolution420Format(for: device) {
-                self.captureDeviceResolution = highestResolution.resolution
-                let dimensions = CMVideoFormatDescriptionGetDimensions(device.activeFormat.formatDescription)
-                bufferSize.width = CGFloat(dimensions.width)
-                bufferSize.height = CGFloat(dimensions.height)
-            }
-            
-            
-            self.rootLayer = view.layer
-            view.layer.addSublayer(videoPreviewLayer!)
-            setupLayers()
+            deviceInput = try AVCaptureDeviceInput(device: videoDevice)
         } catch {
-            print("Error setting up camera: \(error.localizedDescription)")
-            print("Error setting up camera: \(error.localizedDescription)")
-            self.teardownAVCapture()
-        }
-        //Setup vision
-        setupVision()
-        updateLayerGeometry()
-        //run session
-        DispatchQueue.global(qos: .default).async {
-            self.captureSession.startRunning()
-            
-        }
-    }
-    //When the frame get updated
-    public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        print("👋🏻")
-        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
+            print("Could not create video device input: \(error)")
             return
         }
         
-        let exifOrientation = self.exifOrientationForCurrentDeviceOrientation()
+        session.beginConfiguration()
+        session.sessionPreset = .vga640x480
+        
+        // Add video input
+        guard session.canAddInput(deviceInput) else {
+            print("Could not add video device input to the session")
+            session.commitConfiguration()
+            return
+        }
+        session.addInput(deviceInput)
+        
+        // Set bufferSize based on the video device's active format
+        
+        do {
+            try videoDevice.lockForConfiguration()
+            let dimensions = CMVideoFormatDescriptionGetDimensions(videoDevice.activeFormat.formatDescription)
+            bufferSize.width = CGFloat(dimensions.width)
+            bufferSize.height = CGFloat(dimensions.height)
+            videoDevice.unlockForConfiguration()
+        } catch {
+            print("Error locking configuration: \(error)")
+        }
+        
+        // Add video data output
+        //Video output data
+        let videoDataOutput = AVCaptureVideoDataOutput()
+        videoDataOutput.alwaysDiscardsLateVideoFrames = true
+        let videoDataOutputQueue = DispatchQueue(label: "com.example.apple-samplecode.VisionFaceTrack")
+        videoDataOutput.setSampleBufferDelegate(self, queue: videoDataOutputQueue)
+        if session.canAddOutput(videoDataOutput) {
+            session.addOutput(videoDataOutput)
+        }
+        videoDataOutput.connection(with: .video)?.isEnabled = true
+        if let captureConnection = videoDataOutput.connection(with: AVMediaType.video) {
+            if captureConnection.isCameraIntrinsicMatrixDeliverySupported {
+                captureConnection.isCameraIntrinsicMatrixDeliveryEnabled = true
+            }
+        }
+        self.videoDataOutput = videoDataOutput
+        self.videoDataOutputQueue = videoDataOutputQueue
 
+
+        session.commitConfiguration()
+        previewLayer = AVCaptureVideoPreviewLayer(session: session)
+        previewLayer.videoGravity = .resizeAspectFill
+        rootLayer = view.layer
+        previewLayer.frame = rootLayer.bounds
+        rootLayer.addSublayer(previewLayer)
+
+
+        //setupLayers
+        detectionOverlay = CALayer()
+        detectionOverlay.name = "DetectionOverlay"
+        detectionOverlay.bounds = CGRect(x: 0.0, y: 0.0, width: bufferSize.width, height: bufferSize.height)
+        detectionOverlay.position = CGPoint(x: rootLayer.bounds.midX, y: rootLayer.bounds.midY)
+        rootLayer.addSublayer(detectionOverlay)
+    }
+    
+    func startCaptureSession() {
+        DispatchQueue.global(qos: .default).async {
+            self.session.startRunning()
+        }
+    }
+    
+    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        print("Capture output received.♥️")
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        let exifOrientation = exifOrientationFromDeviceOrientation()
         let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: exifOrientation, options: [:])
+        
         do {
             try imageRequestHandler.perform(self.requests)
         } catch {
             print(error)
         }
     }
+    
+    private func exifOrientationFromDeviceOrientation() -> CGImagePropertyOrientation {
+        let curDeviceOrientation = UIDevice.current.orientation
+        switch curDeviceOrientation {
+        case .portraitUpsideDown: return .left
+        case .landscapeLeft: return .upMirrored
+        case .landscapeRight: return .down
+        case .portrait: return .up
+        default: return .up
+        }
+    }
 
     
-    //MARK: 🤷🏻‍♀️
-    
-    func setupLayers() {
-        detectionOverlay = CALayer()
-        detectionOverlay.name = "DetectionOverlay"
-        detectionOverlay.bounds = CGRect(x: 0.0,
-                                         y: 0.0,
-                                         width: bufferSize.width,
-                                         height: bufferSize.height)
-        detectionOverlay.position = CGPoint(x: rootLayer.bounds.midX, y: rootLayer.bounds.midY)
-        rootLayer.addSublayer(detectionOverlay)
-    }
-    
-    // MARK: AVCapture Setup
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-    }
-    
-    // Ensure that the interface stays locked in Portrait.
-    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
-        return .portrait
-    }
-    
-    // Ensure that the interface stays locked in Portrait.
-    override var preferredInterfaceOrientationForPresentation: UIInterfaceOrientation {
-        return .portrait
-    }
-    
-    fileprivate func highestResolution420Format(for device: AVCaptureDevice) -> (format: AVCaptureDevice.Format, resolution: CGSize)? {
-        var highestResolutionFormat: AVCaptureDevice.Format? = nil
-        var highestResolutionDimensions = CMVideoDimensions(width: 0, height: 0)
-        
-        for format in device.formats {
-            let deviceFormat = format as AVCaptureDevice.Format
-            
-            let deviceFormatDescription = deviceFormat.formatDescription
-            if CMFormatDescriptionGetMediaSubType(deviceFormatDescription) == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange {
-                let candidateDimensions = CMVideoFormatDescriptionGetDimensions(deviceFormatDescription)
-                if (highestResolutionFormat == nil) || (candidateDimensions.width > highestResolutionDimensions.width) {
-                    highestResolutionFormat = deviceFormat
-                    highestResolutionDimensions = candidateDimensions
+    //Implement Vision
+    func setupVision() {
+        guard let modelURL = Bundle.main.url(forResource: "TrafficSignsObjectDetector", withExtension: "mlmodelc") else {
+            print("Model file is missing")
+            return
+        }
+        do {
+            let visionModel = try VNCoreMLModel(for: MLModel(contentsOf: modelURL))
+            let objectRecognition = VNCoreMLRequest(model: visionModel) { (request, error) in
+                DispatchQueue.main.async {
+                    if let results = request.results {
+                        self.drawVisionRequestResults(results)
+                    }
                 }
             }
+            self.requests = [objectRecognition]
+        } catch {
+            print("Model loading went wrong: \(error)")
         }
         
-        if highestResolutionFormat != nil {
-            let resolution = CGSize(width: CGFloat(highestResolutionDimensions.width), height: CGFloat(highestResolutionDimensions.height))
-            return (highestResolutionFormat!, resolution)
+    }
+    
+    
+    func drawVisionRequestResults(_ results: [Any]) {
+        CATransaction.begin()
+        CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
+        detectionOverlay.sublayers = nil
+        
+        for observation in results where observation is VNRecognizedObjectObservation {
+            guard let objectObservation = observation as? VNRecognizedObjectObservation else { continue }
+            let topLabelObservation = objectObservation.labels[0]
+            let objectBounds = VNImageRectForNormalizedRect(objectObservation.boundingBox, Int(bufferSize.width), Int(bufferSize.height))
+            let shapeLayer = createRoundedRectLayerWithBounds(objectBounds)
+            let textLayer = createTextSubLayerInBounds(objectBounds, identifier: topLabelObservation.identifier, confidence: topLabelObservation.confidence)
+            shapeLayer.addSublayer(textLayer)
+            detectionOverlay.addSublayer(shapeLayer)
         }
-        
-        return nil
+        updateLayerGeometry()
+        CATransaction.commit()
     }
     
-    fileprivate func configureFrontCamera(for captureSession: AVCaptureSession) throws -> (device: AVCaptureDevice, resolution: CGSize) {
-        let deviceDiscoverySession = AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInWideAngleCamera], mediaType: .video, position: .front)
-        
-        if let device = deviceDiscoverySession.devices.first {
-            if let deviceInput = try? AVCaptureDeviceInput(device: device) {
-                if captureSession.canAddInput(deviceInput) {
-                    captureSession.addInput(deviceInput)
-                }
-                
-                if let highestResolution = self.highestResolution420Format(for: device) {
-                    try device.lockForConfiguration()
-                    device.activeFormat = highestResolution.format
-                    device.unlockForConfiguration()
-                    
-                    return (device, highestResolution.resolution)
-                }
-            }
-        }
-        
-        throw NSError(domain: "ViewController", code: 1, userInfo: nil)
+    func createTextSubLayerInBounds(_ bounds: CGRect, identifier: String, confidence: VNConfidence) -> CATextLayer {
+        let textLayer = CATextLayer()
+        textLayer.name = "Object Label"
+        let formattedString = NSMutableAttributedString(string: String(format: "\(identifier)\nConfidence:  %.2f", confidence))
+        let largeFont = UIFont(name: "Helvetica", size: 24.0)!
+        formattedString.addAttributes([.font: largeFont], range: NSRange(location: 0, length: identifier.count))
+        textLayer.string = formattedString
+        textLayer.bounds = CGRect(x: 0, y: 0, width: bounds.size.height - 10, height: bounds.size.width - 10)
+        textLayer.position = CGPoint(x: bounds.midX, y: bounds.midY)
+        textLayer.shadowOpacity = 0.7
+        textLayer.shadowOffset = CGSize(width: 2, height: 2)
+        textLayer.foregroundColor = UIColor.black.cgColor
+        textLayer.contentsScale = 2.0
+        textLayer.setAffineTransform(CGAffineTransform(rotationAngle: CGFloat.pi / 2.0).scaledBy(x: 1.0, y: -1.0))
+        return textLayer
     }
     
-    // Removes infrastructure for AVCapture as part of cleanup.
-    fileprivate func teardownAVCapture() {
-        self.videoDataOutput = nil
-        self.videoDataOutputQueue = nil
-        
-        if let previewLayer = self.videoPreviewLayer {
-            videoPreviewLayer?.removeFromSuperlayer()
-            self.videoPreviewLayer = nil
-        }
-    }
-    
-    // MARK: Helper Methods for Handling Device Orientation & EXIF
-    fileprivate func radiansForDegrees(_ degrees: CGFloat) -> CGFloat {
-        return CGFloat(Double(degrees) * Double.pi / 180.0)
-    }
-    
-    func exifOrientationForDeviceOrientation(_ deviceOrientation: UIDeviceOrientation) -> CGImagePropertyOrientation {
-        
-        switch deviceOrientation {
-        case .portraitUpsideDown:
-            return .rightMirrored
-            
-        case .landscapeLeft:
-            return .downMirrored
-            
-        case .landscapeRight:
-            return .upMirrored
-            
-        default:
-            return .leftMirrored
-        }
-    }
-    
-    func exifOrientationForCurrentDeviceOrientation() -> CGImagePropertyOrientation {
-        return exifOrientationForDeviceOrientation(UIDevice.current.orientation)
+    func createRoundedRectLayerWithBounds(_ bounds: CGRect) -> CALayer {
+        let shapeLayer = CALayer()
+        shapeLayer.bounds = bounds
+        shapeLayer.position = CGPoint(x: bounds.midX, y: bounds.midY)
+        shapeLayer.name = "Found Object"
+        shapeLayer.backgroundColor = UIColor.green.withAlphaComponent(0.4).cgColor
+        shapeLayer.cornerRadius = 7
+        return shapeLayer
     }
     
     func updateLayerGeometry() {
-    let bounds = rootLayer.bounds
-    var scale: CGFloat
-    
-    let xScale: CGFloat = bounds.size.width / bufferSize.height
-    let yScale: CGFloat = bounds.size.height / bufferSize.width
-    
-    scale = fmax(xScale, yScale)
-    if scale.isInfinite {
-        scale = 1.0
+        let bounds = rootLayer.bounds
+        var scale: CGFloat
+        
+        let xScale: CGFloat = bounds.size.width / bufferSize.height
+        let yScale: CGFloat = bounds.size.height / bufferSize.width
+        
+        scale = fmax(xScale, yScale)
+        if scale.isInfinite {
+            scale = 1.0
+        }
+        CATransaction.begin()
+        CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
+        
+        // rotate the layer into screen orientation and scale and mirror
+        detectionOverlay.setAffineTransform(CGAffineTransform(rotationAngle: CGFloat(.pi / 2.0)).scaledBy(x: scale, y: -scale))
+        // center the layer
+        detectionOverlay.position = CGPoint(x: bounds.midX, y: bounds.midY)
+        
+        CATransaction.commit()
+        
     }
-    CATransaction.begin()
-    CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
-    
-    // rotate the layer into screen orientation and scale and mirror
-    detectionOverlay.setAffineTransform(CGAffineTransform(rotationAngle: CGFloat(.pi / 2.0)).scaledBy(x: scale, y: -scale))
-    // center the layer
-    detectionOverlay.position = CGPoint(x: bounds.midX, y: bounds.midY)
-    
-    CATransaction.commit()
-    
+
 }
-
-    
-
-
-
- }
-
-

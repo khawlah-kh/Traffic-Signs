@@ -12,10 +12,6 @@ struct Traffic_SignsApp: App {
     var body: some Scene {
         WindowGroup {
             CameraFullView()
-                .onAppear{
-                    TrafficSignManager.createIdNameDic()
-                    
-                }
         }
     }
 }

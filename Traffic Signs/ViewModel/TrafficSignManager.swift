@@ -8,6 +8,12 @@
 import Foundation
 
 
+
+import UIKit
+import Vision
+import AVFoundation
+
+//csv
 class TrafficSignManager{
     static var idNameDic:[String:String] = [:]
 
@@ -47,3 +53,4 @@ class TrafficSignManager{
     }
 
 }
+
